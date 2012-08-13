@@ -58,7 +58,11 @@ module Capistrano
           _cset(:sbt_cleanup_settings_local, [])
           _cset(:sbt_compile_locally, false) # perform precompilation on localhost
           _cset(:sbt_goals, %w(reload clean package))
-          _cset(:sbt_common_options, [])
+          _cset(:sbt_common_options) {
+            options = []
+            options << "-Dsbt.log.noformat=true" if fetch(:sbt_log_noformat, true)
+            options
+          }
           _cset(:sbt_options) {
             sbt_common_options + fetch(:sbt_extra_options, [])
           }
