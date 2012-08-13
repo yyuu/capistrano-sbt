@@ -187,15 +187,25 @@ module Capistrano
             abort("execution failure") unless system(cmd)
           }
 
+          _cset(:sbt_tar, 'tar')
+          _cset(:sbt_tar_local, 'tar')
+          _cset(:sbt_target_archive) {
+            "#{sbt_target_path}.tar.gz"
+          }
+          _cset(:sbt_target_archive_local) {
+            "#{sbt_target_path_local}.tar.gz"
+          }
           task(:upload_locally, :roles => :app, :except => { :no_release => true }) {
             on_rollback {
-              run("rm -rf #{sbt_target_path}")
+              run("rm -rf #{sbt_target_path} #{sbt_target_archive}")
             }
-            run_locally("test -d #{sbt_target_path_local}")
-            run("mkdir -p #{sbt_target_path}")
-            find_servers_for_task(current_task).each { |server|
-              run_locally("rsync -lrt --chmod=u+rwX,go+rX #{sbt_target_path_local}/ #{user}@#{server.host}:#{sbt_target_path}/")
-            }
+            begin
+              run_locally("cd #{File.dirname(sbt_target_path_local)} && #{sbt_tar_local} chzf #{sbt_target_archive_local} #{File.basename(sbt_target_path_local)}")
+              upload(sbt_target_archive_local, sbt_target_archive)
+              run("cd #{File.dirname(sbt_target_path)} && #{sbt_tar} xzf #{sbt_target_archive} && rm -f #{sbt_target_archive}")
+            ensure
+              run_locally("rm -f #{sbt_target_archive_local}")
+            end
           }
         }
       }
