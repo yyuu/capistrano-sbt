@@ -20,9 +20,9 @@ Or install it yourself as:
 
 This recipes will try to do following things during Capistrano `deploy:setup` and `deploy` tasks.
 
-(1) Download and install sbt for current project
-(2) Prepare optional `*.sbt` for current project (optional)
-(3) Build sbt project remotely (default) or locally
+1. Download and install sbt for current project
+2. Prepare optional `*.sbt` for current project (optional)
+3. Build sbt project remotely (default) or locally
 
 To build you sbt projects during Capistrano `deploy` tasks, add following in you `config/deploy.rb`. By default, sbt build will run after the Capistrano's `deploy:finalize_update`.
 
