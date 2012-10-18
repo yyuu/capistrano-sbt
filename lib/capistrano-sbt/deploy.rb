@@ -1,5 +1,6 @@
 
 require 'capistrano'
+require 'tempfile'
 require 'uri'
 
 module Capistrano
@@ -8,8 +9,16 @@ module Capistrano
       configuration.load {
         namespace(:sbt) {
           _cset(:sbt_version, '0.11.2')
+          _cset(:sbt_group_id) {
+            case sbt_version
+            when /^0\.(?:7|10)\.\d+$/, /^0\.11\.[0-2]$/
+              'org.scala-tools.sbt'
+            else
+              'org.scala-sbt'
+            end
+          }
           _cset(:sbt_jar_url) {
-            "http://typesafe.artifactoryonline.com/typesafe/ivy-releases/org.scala-tools.sbt/sbt-launch/#{sbt_version}/sbt-launch.jar"
+            "http://typesafe.artifactoryonline.com/typesafe/ivy-releases/#{sbt_group_id}/sbt-launch/#{sbt_version}/sbt-launch.jar"
           }
           _cset(:sbt_jar_file) {
             File.join(shared_path, 'tools', 'sbt', "sbt-#{sbt_version}", File.basename(URI.parse(sbt_jar_url).path))
@@ -88,68 +97,72 @@ module Capistrano
             }
           }
 
+          def _install(options={})
+            execute = []
+            jar_file = options.delete(:jar_file)
+            jar_url = options.delete(:jar_url)
+            execute << "mkdir -p #{File.dirname(jar_file)}"
+            execute << "( test -f #{jar_file} || wget --no-verbose -O #{jar_file} #{jar_url} )"
+            execute << "test -f #{jar_file}"
+            execute.join(' && ')
+          end
+
           task(:install, :roles => :app, :except => { :no_release => true }) {
-            run(<<-E)
-              ( test -d #{File.dirname(sbt_jar_file)} || mkdir -p #{File.dirname(sbt_jar_file)} ) &&
-              ( test -f #{sbt_jar_file} || wget --no-verbose -O #{sbt_jar_file} #{sbt_jar_url} ) &&
-              test -f #{sbt_jar_file};
-            E
+            run(_install(:jar_file => sbt_jar_file, :jar_url => sbt_jar_url))
           }
 
-          task(:install_locally, :except => { :no_release => true }) { # TODO: make install and install_locally together
-            run_locally(<<-E)
-              ( test -d #{File.dirname(sbt_jar_file_local)} || mkdir -p #{File.dirname(sbt_jar_file_local)} ) &&
-              ( test -f #{sbt_jar_file_local} || wget --no-verbose -O #{sbt_jar_file_local} #{sbt_jar_url} ) &&
-              test -f #{sbt_jar_file_local};
-            E
+          task(:install_locally, :except => { :no_release => true }) {
+            run_locally(_install(:jar_file => sbt_jar_file_local, :jar_url => sbt_jar_url))
           }
+
+          def template(file)
+            if File.file?(file)
+              File.read(file)
+            elsif File.file?("#{file}.erb")
+              ERB.new(File.read(file)).result(binding)
+            else
+              abort("No such template: #{file} or #{file}.erb")
+            end
+          end
+
+          def _update_settings(files_map, options={})
+            execute = []
+            dirs = files_map.map { |src, dst| File.dirname(dst) }.uniq
+            execute << "mkdir -p #{dirs.join(' ')}" unless dirs.empty?
+            files_map.each do |src, dst|
+              execute << "( diff -u #{dst} #{src} || mv -f #{src} #{dst} )"
+              cleanup = options.fetch(:cleanup, [])
+              execute << "rm -f #{cleanup.join(' ')}" unless cleanup.empty?
+            end
+            execute.join(' && ')
+          end
 
           task(:update_settings, :roles => :app, :except => { :no_release => true }) {
-            tmp_files = []
-            on_rollback {
-              run("rm -f #{tmp_files.join(' ')}") unless tmp_files.empty?
-            }
-            sbt_settings.each { |file|
-              tmp_files << tmp_file = File.join('/tmp', File.basename(file))
-              src_file = File.join(sbt_template_path, file)
-              dst_file = File.join(sbt_settings_path, file)
-              run(<<-E)
-                ( test -d #{File.dirname(dst_file)} || mkdir -p #{File.dirname(dst_file)} ) &&
-                ( test -f #{dst_file} && mv -f #{dst_file} #{dst_file}.orig; true );
-              E
-              if File.file?(src_file)
-                put(File.read(src_file), tmp_file)
-              elsif File.file?("#{src_file}.erb")
-                put(ERB.new(File.read("#{src_file}.erb")).result(binding), tmp_file)
-              else
-                abort("sbt:update_settings: no such template found: #{src_file} or #{src_file}.erb")
+            srcs = sbt_settings.map { |f| File.join(sbt_template_path, f) }
+            tmps = sbt_settings.map { |f| t=Tempfile.new('sbt');s=t.path;t.close(true);s }
+            dsts = sbt_settings.map { |f| File.join(sbt_settings_path, f) }
+            begin
+              srcs.zip(tmps).each do |src, tmp|
+                put(template(src), tmp)
               end
-              run("diff #{dst_file} #{tmp_file} || mv -f #{tmp_file} #{dst_file}")
-            }
-            run("rm -f #{sbt_cleanup_settings.join(' ')}") unless sbt_cleanup_settings.empty?
+              run(_update_settings(tmps.zip(dsts), :cleanup => sbt_cleanup_settings)) unless tmps.empty?
+            ensure
+              run("rm -f #{tmps.join(' ')}") unless tmps.empty?
+            end
           }
 
           task(:update_settings_locally, :except => { :no_release => true }) {
-            sbt_settings_local.each { |file|
-              src_file = File.join(sbt_template_path, file)
-              dst_file = File.join(sbt_settings_path_local, file)
-              run_locally(<<-E)
-                ( test -d #{File.dirname(dst_file)} || mkdir -p #{File.dirname(dst_file)} ) &&
-                ( test -f #{dst_file} && mv -f #{dst_file} #{dst_file}.orig; true );
-              E
-              if File.file?(src_file)
-                File.open(dst_file, 'w') { |fp|
-                  fp.write(File.read(src_file))
-                }
-              elsif File.file?("#{src_file}.erb")
-                File.open(dst_file, 'w') { |fp|
-                  fp.write(ERB.new(File.read("#{src_file}.erb")).result(binding))
-                }
-              else
-                abort("sbt:update_settings_locally: no such template: #{src_file} or #{src_file}.erb")
+            srcs = sbt_settings_local.map { |f| File.join(sbt_template_path, f) }
+            tmps = sbt_settings.map { |f| t=Tempfile.new('sbt');s=t.path;t.close(true);s }
+            dsts = sbt_settings_local.map { |f| File.join(sbt_settings_path_local, f) }
+            begin
+              srcs.zip(tmps).each do |src, tmp|
+                File.open(tmp, 'wb') { |fp| fp.write(template(src)) }
               end
-            }
-            run_locally("rm -f #{sbt_cleanup_settings_local.join(' ')}") unless sbt_cleanup_settings_local.empty?
+              run_locally(_update_settings(tmps.zip(dsts), :cleanup => sbt_cleanup_settings_local)) unless tmps.empty?
+            ensure
+              run_locally("rm -f #{tmps.join(' ')}") unless tmps.empty?
+            end
           }
 
           desc("Update sbt build.")
@@ -182,7 +195,6 @@ module Capistrano
 
           desc("Perform sbt build locally.")
           task(:execute_locally, :roles => :app, :except => { :no_release => true }) {
-            setup_locally
             on_rollback {
               run_locally("cd #{sbt_project_path_local} && #{sbt_cmd_local} clean")
             }
