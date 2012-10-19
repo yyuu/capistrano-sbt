@@ -32,8 +32,9 @@ To build you sbt projects during Capistrano `deploy` tasks, add following in you
 
 Following options are available to manage your sbt build.
 
- * `:sbt_version` - project sbt version
- * `:sbt_archive_url` - download URL for specified sbt version
+ * `:sbt_use_extras` - Use [sbt-extras](https://github.com/paulp/sbt-extras) to manage sbt. `false` by default.
+ * `:sbt_version` - Project sbt version. This value may be discarded if `sbt_use_extras` is turned `true`.
+ * `:sbt_archive_url` - Download URL for specified sbt version. This value may be discarded if `sbt_use_extras` is turned `true`.
  * `:sbt_compile_locally` - compile project on localhost. false by default.
  * `:sbt_goals` - sbt commands and tasks to execute. default is "reload clean package".
  * `:sbt_update_settings` - update `*.sbt` or not. false by default.
@@ -43,6 +44,8 @@ Following options are available to manage your sbt build.
  * `:sbt_template_path` - specify ERB template path for `*.sbt`.
  * `:sbt_java_home` - optional `JAVA_HOME` settings for sbt commands.
  * `:sbt_java_home_local` - optional `JAVA_HOME` settings for sbt commands in localhost.
+ * `:sbt_extras_url` - Download URL of `sbt` script of sbt-extras.
+ * `:sbt_extras_check_interval` - Check updates of sbt-extras every specified seconds. `86400` by default.
 
 ## Contributing
 

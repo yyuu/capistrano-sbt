@@ -30,6 +30,8 @@ module Capistrano
           _cset(:sbt_extras_url, "https://raw.github.com/paulp/sbt-extras/master/sbt")
           _cset(:sbt_extras_file) { File.join(shared_path, 'tools', 'sbt', 'sbt') }
           _cset(:sbt_extras_file_local) { File.join(File.expand_path('.'), 'tools', 'sbt', 'sbt') }
+          _cset(:sbt_extras_check_interval, 86400)
+          _cset(:sbt_extras_check_timestamp) { (Time.now - sbt_extras_check_interval).strftime('%Y%m%d%H%M') }
           _cset(:sbt_cmd) {
             if fetch(:sbt_java_home, nil)
               env = "env JAVA_HOME=#{sbt_java_home.dump}"
@@ -116,29 +118,28 @@ module Capistrano
             execute = []
             if sbt_use_extras
               extras_file = options.delete(:extras_file)
-              extras_url = options.delete(:extras_url)
               execute << "mkdir -p #{File.dirname(extras_file)}"
-              # TODO: check newer version of sbt-extras
-              execute << "( test -f #{extras_file} || wget --no-verbose -O #{extras_file} #{extras_url} )"
+              x = "/tmp/sbt-extras.#{$$}"
+              execute << "touch -t #{sbt_extras_check_timestamp} #{x}"
+              execute << "( test #{extras_file} -nt #{x} || wget --no-verbose -O #{extras_file} #{sbt_extras_url} )"
+              execute << "touch #{extras_file}"
+              execute << "rm -f #{x}"
               execute << "( test -x #{extras_file} || chmod a+x #{extras_file} )"
             else
               jar_file = options.delete(:jar_file)
-              jar_url = options.delete(:jar_url)
               execute << "mkdir -p #{File.dirname(jar_file)}"
-              execute << "( test -f #{jar_file} || wget --no-verbose -O #{jar_file} #{jar_url} )"
+              execute << "( test -f #{jar_file} || wget --no-verbose -O #{jar_file} #{sbt_jar_url} )"
               execute << "test -f #{jar_file}"
             end
             execute.join(' && ')
           end
 
           task(:install, :roles => :app, :except => { :no_release => true }) {
-            run(_install(:jar_file => sbt_jar_file, :jar_url => sbt_jar_url,
-                         :extras_file => sbt_extras_file, :extras_url => sbt_extras_url))
+            run(_install(:jar_file => sbt_jar_file, :extras_file => sbt_extras_file))
           }
 
           task(:install_locally, :except => { :no_release => true }) {
-            run_locally(_install(:jar_file => sbt_jar_file_local, :jar_url => sbt_jar_url,
-                                 :extras_file => sbt_extras_file_local, :extras_url => sbt_extras_url))
+            run_locally(_install(:jar_file => sbt_jar_file_local, :extras_file => sbt_extras_file_local))
           }
 
           def template(file)
