@@ -86,7 +86,34 @@ module Capistrano
           _cset(:sbt_goals, %w(reload clean package))
           _cset(:sbt_common_options) {
             options = []
-            options << "-Dsbt.log.noformat=true" if fetch(:sbt_log_noformat, true)
+            if fetch(:sbt_boot_directory, nil)
+              options << if sbt_use_extras
+                           "-sbt-boot #{sbt_boot_directory}"
+                         else
+                           "-Dsbt.boot.directory=#{sbt_boot_directory}"
+                         end
+            end
+            if fetch(:sbt_global_base, nil)
+              options << if sbt_use_extras
+                           "-sbt-dir #{sbt_global_base}"
+                         else
+                           "-Dsbt.global.base=#{sbt_global_base}"
+                         end
+            end
+            if fetch(:sbt_ivy_home, nil)
+              options << if sbt_use_extras
+                           "-ivy #{sbt_ivy_home}"
+                         else
+                           "-Dsbt.ivy.home=#{sbt_ivy_home}"
+                         end
+            end
+            if fetch(:sbt_log_noformat, true)
+              options << if sbt_use_extras
+                           "-no-colors"
+                         else
+                           "-Dsbt.log.noformat=true"
+                         end
+            end
             options
           }
           _cset(:sbt_options) {
