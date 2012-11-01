@@ -41,14 +41,13 @@ Following options are available to manage your sbt build.
  * `:sbt_update_settings_locally` - udate `*.sbt` or not on local compilation. false by default.
  * `:sbt_settings` - list of your optional `*.sbt` files
  * `:sbt_settings_local` - list of your optional `*.sbt` files in on local compilation.
+ * `:sbt_settings_path` - the destination path of the optional `*.sbt` files.
+ * `:sbt_settings_path_local` - the destination path of the optional `*.sbt` files.
  * `:sbt_template_path` - specify ERB template path for `*.sbt`.
  * `:sbt_java_home` - optional `JAVA_HOME` settings for sbt commands.
  * `:sbt_java_home_local` - optional `JAVA_HOME` settings for sbt commands in localhost.
  * `:sbt_extras_url` - Download URL of `sbt` script of sbt-extras.
  * `:sbt_extras_check_interval` - Check updates of sbt-extras every specified seconds. `86400` by default.
- * `:sbt_boot_directory` - Boot directory for sbt. This value will be used as `sbt.boot.directory`.
- * `:sbt_global_base` - Base directory for sbt. This value will be used as `sbt.global.base`.
- * `:sbt_ivy_home` - Ivy home for sbt. This value will be used as `sbt.ivy.home`.
  * `:sbt_log_noformat` - Do not colorize sbt outputs. `true` by default.
 
 ## Contributing

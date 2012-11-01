@@ -72,12 +72,8 @@ module Capistrano
           _cset(:sbt_template_path, File.join(File.dirname(__FILE__), 'templates'))
           _cset(:sbt_update_settings, false)
           _cset(:sbt_update_settings_locally, false)
-          _cset(:sbt_settings_path) {
-            sbt_project_path
-          }
-          _cset(:sbt_settings_path_local) {
-            sbt_project_path_local
-          }
+          _cset(:sbt_settings_path) { File.join(sbt_project_path, 'sbt') }
+          _cset(:sbt_settings_path_local) { File.join(sbt_project_path_local, 'sbt') }
           _cset(:sbt_settings, [])
           _cset(:sbt_settings_local, [])
           _cset(:sbt_cleanup_settings, [])
@@ -86,27 +82,6 @@ module Capistrano
           _cset(:sbt_goals, %w(reload clean package))
           _cset(:sbt_common_options) {
             options = []
-            if fetch(:sbt_boot_directory, nil)
-              options << if sbt_use_extras
-                           "-sbt-boot #{sbt_boot_directory}"
-                         else
-                           "-Dsbt.boot.directory=#{sbt_boot_directory}"
-                         end
-            end
-            if fetch(:sbt_global_base, nil)
-              options << if sbt_use_extras
-                           "-sbt-dir #{sbt_global_base}"
-                         else
-                           "-Dsbt.global.base=#{sbt_global_base}"
-                         end
-            end
-            if fetch(:sbt_ivy_home, nil)
-              options << if sbt_use_extras
-                           "-ivy #{sbt_ivy_home}"
-                         else
-                           "-Dsbt.ivy.home=#{sbt_ivy_home}"
-                         end
-            end
             if fetch(:sbt_log_noformat, true)
               options << if sbt_use_extras
                            "-no-colors"
@@ -117,10 +92,26 @@ module Capistrano
             options
           }
           _cset(:sbt_options) {
-            sbt_common_options + fetch(:sbt_extra_options, [])
+            options = sbt_common_options + fetch(:sbt_extra_options, [])
+            if sbt_update_settings
+              options << if sbt_use_extras
+                           "-sbt-dir #{sbt_settings_path}"
+                         else
+                           "-Dsbt.global.base=#{sbt_settings_path}"
+                         end
+            end
+            options
           }
           _cset(:sbt_options_local) {
-            sbt_common_options + fetch(:sbt_extra_options_local, [])
+            options = sbt_common_options + fetch(:sbt_extra_options_local, [])
+            if sbt_update_settings_locally
+              options << if sbt_use_extras
+                           "-sbt-dir #{sbt_settings_path_local}"
+                         else
+                           "-Dsbt.global.base=#{sbt_settings_path_local}"
+                         end
+            end
+            options
           }
 
           desc("Setup sbt.")
