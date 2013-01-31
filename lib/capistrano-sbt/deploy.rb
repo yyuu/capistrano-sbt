@@ -1,6 +1,5 @@
 
 require 'capistrano'
-require 'tempfile'
 require 'uri'
 
 module Capistrano
@@ -184,7 +183,7 @@ module Capistrano
 
           task(:update_settings, :roles => :app, :except => { :no_release => true }) {
             srcs = sbt_settings.map { |f| File.join(sbt_template_path, f) }
-            tmps = sbt_settings.map { |f| t=Tempfile.new('sbt');s=t.path;t.close(true);s }
+            tmps = sbt_settings.map { |f| capture("mktemp").chomp }
             dsts = sbt_settings.map { |f| File.join(sbt_settings_path, f) }
             begin
               srcs.zip(tmps).each do |src, tmp|
@@ -198,7 +197,7 @@ module Capistrano
 
           task(:update_settings_locally, :except => { :no_release => true }) {
             srcs = sbt_settings_local.map { |f| File.join(sbt_template_path, f) }
-            tmps = sbt_settings.map { |f| t=Tempfile.new('sbt');s=t.path;t.close(true);s }
+            tmps = sbt_settings.map { |f| capture("mktemp").chomp }
             dsts = sbt_settings_local.map { |f| File.join(sbt_settings_path_local, f) }
             begin
               srcs.zip(tmps).each do |src, tmp|
