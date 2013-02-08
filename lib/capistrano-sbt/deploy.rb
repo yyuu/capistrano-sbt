@@ -197,7 +197,7 @@ module Capistrano
 
           task(:update_settings_locally, :except => { :no_release => true }) {
             srcs = sbt_settings_local.map { |f| File.join(sbt_template_path, f) }
-            tmps = sbt_settings.map { |f| capture("mktemp").chomp }
+            tmps = sbt_settings.map { |f| `mktemp`.chomp }
             dsts = sbt_settings_local.map { |f| File.join(sbt_settings_path_local, f) }
             begin
               srcs.zip(tmps).each do |src, tmp|
