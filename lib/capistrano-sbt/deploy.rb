@@ -242,7 +242,7 @@ module Capistrano
           _cset(:sbt_release_build, false)
           _cset(:sbt_snapshot_pattern, /-SNAPSHOT$/i)
           _cset(:sbt_project_version) {
-            _sbt_parse_version(capture(_sbt(sbt_cmd_local, sbt_project_path_local, ["show version"])))
+            _sbt_parse_version(capture(_sbt(sbt_cmd, sbt_project_path, ["show version"])))
           }
           _cset(:sbt_project_version_local) {
             _sbt_parse_version(run_locally(_sbt(sbt_cmd_local, sbt_project_path_local, ["show version"])))
