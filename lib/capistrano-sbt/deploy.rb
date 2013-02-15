@@ -229,22 +229,26 @@ module Capistrano
             }
           }
 
+          def _sbt(cmd, path, goals=[])
+            "cd #{path.dump} && #{cmd} #{goals.map { |s| s.dump }.join(' ')}"
+          end
+
           desc("Perform sbt build.")
           task(:execute, :roles => :app, :except => { :no_release => true }) {
             on_rollback {
-              run("cd #{sbt_project_path} && #{sbt_cmd} clean")
+              run(_sbt(sbt_cmd, sbt_project_path, %w(clean)))
             }
-            run("cd #{sbt_project_path} && #{sbt_cmd} #{sbt_goals.join(' ')}")
+            run(_sbt(sbt_cmd, sbt_project_path, sbt_goals))
           }
 
           desc("Perform sbt build locally.")
           task(:execute_locally, :roles => :app, :except => { :no_release => true }) {
             on_rollback {
-              run_locally("cd #{sbt_project_path_local} && #{sbt_cmd_local} clean")
+              run_locally(_sbt(sbt_cmd_local, sbt_project_path_local, %w(clean)))
             }
-            cmd = "cd #{sbt_project_path_local} && #{sbt_cmd_local} #{sbt_goals.join(' ')}"
-            logger.info(cmd)
-            abort("execution failure") unless system(cmd)
+            cmdline = _sbt(sbt_cmd_local, sbt_project_path_local, sbt_goals)
+            logger.info(cmdline)
+            abort("execution failure") unless system(cmdline)
           }
 
           _cset(:sbt_tar, 'tar')
