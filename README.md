@@ -49,6 +49,7 @@ Following options are available to manage your sbt build.
  * `:sbt_extras_url` - Download URL of `sbt` script of sbt-extras.
  * `:sbt_extras_check_interval` - Check updates of sbt-extras every specified seconds. `86400` by default.
  * `:sbt_log_noformat` - Do not colorize sbt outputs. `true` by default.
+ * `:sbt_release_build` - Skip building on SNAPSHOT version. `false` by default.
 
 ## Contributing
 

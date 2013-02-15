@@ -233,11 +233,36 @@ module Capistrano
             "cd #{path.dump} && #{cmd} #{goals.map { |s| s.dump }.join(' ')}"
           end
 
+          def _sbt_parse_version(s)
+            # FIXME: is there any better way to get project version?
+            lastline = s.split(/(?:\r?\n)+/)[-1]
+            lastline.split[-1]
+          end
+
+          _cset(:sbt_release_build, false)
+          _cset(:sbt_snapshot_pattern, /-SNAPSHOT$/i)
+          _cset(:sbt_project_version) {
+            _sbt_parse_version(capture(_sbt(sbt_cmd_local, sbt_project_path_local, ["show version"])))
+          }
+          _cset(:sbt_project_version_local) {
+            _sbt_parse_version(run_locally(_sbt(sbt_cmd_local, sbt_project_path_local, ["show version"])))
+          }
+
+          def _validate_project_version(version_key)
+            if sbt_release_build
+              version = fetch(version_key)
+              if sbt_snapshot_pattern === version
+                abort("Skip to build project since \`#{version}' is a SNAPSHOT version.")
+              end
+            end
+          end
+
           desc("Perform sbt build.")
           task(:execute, :roles => :app, :except => { :no_release => true }) {
             on_rollback {
               run(_sbt(sbt_cmd, sbt_project_path, %w(clean)))
             }
+            _validate_project_version(:sbt_project_version)
             run(_sbt(sbt_cmd, sbt_project_path, sbt_goals))
           }
 
@@ -246,6 +271,7 @@ module Capistrano
             on_rollback {
               run_locally(_sbt(sbt_cmd_local, sbt_project_path_local, %w(clean)))
             }
+            _validate_project_version(:sbt_project_version_local)
             cmdline = _sbt(sbt_cmd_local, sbt_project_path_local, sbt_goals)
             logger.info(cmdline)
             abort("execution failure") unless system(cmdline)
