@@ -7,7 +7,7 @@ module Capistrano
     def self.extended(configuration)
       configuration.load {
         namespace(:sbt) {
-          _cset(:sbt_version, '0.11.2')
+          _cset(:sbt_version, '0.12.2')
           _cset(:sbt_group_id) {
             case sbt_version
             when /^0\.(?:7|10)\.\d+$/, /^0\.11\.[0-2]$/
