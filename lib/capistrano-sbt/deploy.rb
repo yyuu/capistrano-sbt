@@ -183,7 +183,7 @@ module Capistrano
 
           task(:update_settings, :roles => :app, :except => { :no_release => true }) {
             srcs = sbt_settings.map { |f| File.join(sbt_template_path, f) }
-            tmps = sbt_settings.map { |f| capture("t=$(mktemp /tmp/capistrano-sbt.XXXXXXXXXX;rm -f $t;echo $t").chomp }
+            tmps = sbt_settings.map { |f| capture("t=$(mktemp /tmp/capistrano-sbt.XXXXXXXXXX);rm -f $t;echo $t").chomp }
             dsts = sbt_settings.map { |f| File.join(sbt_settings_path, f) }
             begin
               srcs.zip(tmps).each do |src, tmp|
@@ -197,7 +197,7 @@ module Capistrano
 
           task(:update_settings_locally, :except => { :no_release => true }) {
             srcs = sbt_settings_local.map { |f| File.join(sbt_template_path, f) }
-            tmps = sbt_settings.map { |f| `t=$(mktemp /tmp/capistrano-sbt.XXXXXXXXXX;rm -f $t;echo $t`.chomp }
+            tmps = sbt_settings.map { |f| `t=$(mktemp /tmp/capistrano-sbt.XXXXXXXXXX);rm -f $t;echo $t`.chomp }
             dsts = sbt_settings_local.map { |f| File.join(sbt_settings_path_local, f) }
             begin
               srcs.zip(tmps).each do |src, tmp|
