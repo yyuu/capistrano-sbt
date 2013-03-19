@@ -51,6 +51,9 @@ module Capistrano
             if fetch(:sbt_java_home_local, nil)
               env = "env JAVA_HOME=#{sbt_java_home_local.dump}"
               java = "#{sbt_java_home_local}/bin/java"
+            else
+              env = ""
+              java = "java"
             end
             if sbt_use_extras
               "#{env} #{sbt_extras_file_local} #{sbt_options_local.join(' ')}".strip
