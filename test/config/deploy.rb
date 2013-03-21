@@ -92,6 +92,10 @@ task(:test_all) {
   find_and_execute_task("test_default")
 }
 
+on(:start) {
+  run("rm -rf #{deploy_to.dump}")
+}
+
 namespace(:test_default) {
   task(:default) {
     methods.grep(/^test_/).each do |m|

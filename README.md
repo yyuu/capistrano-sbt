@@ -32,7 +32,7 @@ To build you sbt projects during Capistrano `deploy` tasks, add following in you
 
 Following options are available to manage your sbt build.
 
- * `:sbt_use_extras` - Use [sbt-extras](https://github.com/paulp/sbt-extras) to manage sbt. `false` by default.
+ * `:sbt_use_extras` - Use [sbt-extras](https://github.com/paulp/sbt-extras) to manage sbt. `true` by default.
  * `:sbt_version` - Project sbt version. This value may be discarded if `sbt_use_extras` is turned `true`.
  * `:sbt_archive_url` - Download URL for specified sbt version. This value may be discarded if `sbt_use_extras` is turned `true`.
  * `:sbt_compile_locally` - compile project on localhost. false by default.

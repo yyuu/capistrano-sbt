@@ -21,18 +21,18 @@ module Capistrano
           _cset(:sbt_jar_url) {
             "http://typesafe.artifactoryonline.com/typesafe/ivy-releases/#{sbt_group_id}/sbt-launch/#{sbt_version}/sbt-launch.jar"
           }
-          _cset(:sbt_jar_file) {
-            File.join(shared_path, 'tools', 'sbt', "sbt-#{sbt_version}", File.basename(URI.parse(sbt_jar_url).path))
-          }
-          _cset(:sbt_jar_file_local) {
-            File.join(File.expand_path('.'), 'tools', 'sbt', "sbt-#{sbt_version}", File.basename(URI.parse(sbt_jar_url).path))
-          }
-          _cset(:sbt_use_extras, false)
+          _cset(:sbt_tools_path) { File.join(shared_path, "tools", "sbt") }
+          _cset(:sbt_tools_path_local) { File.expand_path("tools/sbt") }
+          _cset(:sbt_archive_path) { sbt_tools_path }
+          _cset(:sbt_archive_path_local) { sbt_tools_path_local }
+          _cset(:sbt_jar_file) { File.join(sbt_tools_path, "sbt-#{sbt_version}", File.basename(URI.parse(sbt_jar_url).path)) }
+          _cset(:sbt_jar_file_local) { File.join(sbt_tools_path_local, "sbt-#{sbt_version}", File.basename(URI.parse(sbt_jar_url).path)) }
+          _cset(:sbt_use_extras, true)
           _cset(:sbt_extras_url, "https://raw.github.com/paulp/sbt-extras/master/sbt")
-          _cset(:sbt_extras_file) { File.join(shared_path, 'tools', 'sbt', 'sbt') }
-          _cset(:sbt_extras_file_local) { File.join(File.expand_path('.'), 'tools', 'sbt', 'sbt') }
+          _cset(:sbt_extras_file) { File.join(sbt_tools_path, "sbt") }
+          _cset(:sbt_extras_file_local) { File.join(sbt_tools_path_local, "sbt") }
           _cset(:sbt_extras_check_interval, 86400)
-          _cset(:sbt_extras_check_timestamp) { (Time.now - sbt_extras_check_interval).strftime('%Y%m%d%H%M') }
+          _cset(:sbt_extras_check_timestamp) { (Time.now - sbt_extras_check_interval).strftime("%Y%m%d%H%M") }
           _cset(:sbt_cmd) {
             if fetch(:sbt_java_home, nil)
               env = "env JAVA_HOME=#{sbt_java_home.dump}"
