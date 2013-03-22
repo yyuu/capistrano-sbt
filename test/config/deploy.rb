@@ -121,7 +121,7 @@ namespace(:test_default) {
 
   task(:setup) {
     uninstall_sbt!
-    set(:sbt_version, "0.12.2")
+#   set(:sbt_version, "0.12.2")
     set(:sbt_use_extras, true)
     set(:sbt_setup_remotely, true)
     set(:sbt_setup_locally, true)
@@ -187,7 +187,7 @@ namespace(:test_with_remote) {
 
   task(:setup) {
     uninstall_sbt!
-    set(:sbt_version, "0.12.2")
+#   set(:sbt_version, "0.12.2")
     set(:sbt_use_extras, true)
     set(:sbt_setup_remotely, true)
     set(:sbt_setup_locally, false)
@@ -253,7 +253,7 @@ namespace(:test_with_local) {
 
   task(:setup) {
     uninstall_sbt!
-    set(:sbt_version, "0.12.2")
+#   set(:sbt_version, "0.12.2")
     set(:sbt_use_extras, true)
     set(:sbt_setup_remotely, false)
     set(:sbt_setup_locally, true)
@@ -319,7 +319,7 @@ namespace(:test_with_release_build) {
 
   task(:setup) {
     uninstall_sbt!
-    set(:sbt_version, "0.12.2")
+#   set(:sbt_version, "0.12.2")
     set(:sbt_use_extras, true)
     set(:sbt_setup_remotely, true)
     set(:sbt_setup_locally, true)
@@ -371,7 +371,7 @@ namespace(:test_with_launch_jar) {
 
   task(:setup) {
     uninstall_sbt!
-    set(:sbt_version, "0.12.2")
+#   set(:sbt_version, "0.12.2")
     set(:sbt_use_extras, false)
     set(:sbt_setup_remotely, true)
     set(:sbt_setup_locally, true)

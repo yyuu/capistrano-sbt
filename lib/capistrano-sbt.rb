@@ -2,6 +2,7 @@ require "capistrano-sbt/version"
 require "capistrano"
 require "capistrano/configuration/actions/file_transfer_ext"
 require "capistrano/configuration/resources/file_resources"
+require "tempfile"
 require "uri"
 
 module Capistrano
@@ -45,7 +46,33 @@ module Capistrano
           _cset(:sbt_extras_file_local) { File.join(sbt_tools_path_local, "sbt") }
 
           ## sbt-launch.jar
-          _cset(:sbt_version, "0.12.2")
+          _cset(:sbt_project_sbt_version) {
+            begin
+              tempfile = Tempfile.new("capistrano-sbt")
+              download(File.join(sbt_project_path, "project", "build.properties"), tempfile.path)
+              tempfile.rewind()
+              tempfile.read().scan(/^sbt\.version=(.*)$/).map { |x| x.last }.last
+            rescue
+              nil
+            ensure
+              tempfile.close()
+            end
+          }
+          _cset(:sbt_project_sbt_version_local) {
+            begin
+              properties = File.read(File.join(sbt_project_path_local, "project", "build.properties"))
+              properties.scan(/^sbt\.version=(.*)$/).map { |x| x.last }.last
+            rescue
+              nil
+            end
+          }
+          _cset(:sbt_version) {
+            version ||= sbt_project_sbt_version if sbt_update_remotely
+            version ||= sbt_project_sbt_version_local if sbt_update_locally
+            version ||= "0.12.2"
+            logger.debug("Detected project sbt version is #{version}.")
+            version
+          }
           _cset(:sbt_group_id) {
             case sbt_version
             when /^0\.(?:7|10)\.\d+$/, /^0\.11\.[0-2]$/
