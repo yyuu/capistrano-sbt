@@ -79,7 +79,7 @@ module Capistrano
             version ||= sbt_project_sbt_version if sbt_update_remotely
             version ||= sbt_project_sbt_version_local if sbt_update_locally
             version ||= "0.12.2"
-            logger.debug("Detected project sbt version is #{version}.")
+            logger.debug("Detected sbt version #{version}")
             version
           }
           _cset(:sbt_group_id) {
@@ -113,6 +113,12 @@ module Capistrano
             else
               File.join(sbt_path_local, "sbt-launch.jar")
             end
+          }
+          _cset(:sbt_launch_jar_script) {
+            (<<-EOS).gsub(/^\s*/, "")
+              #!/bin/sh -e
+              java -Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=384M -jar `dirname $0`/sbt-launch.jar "$@"
+            EOS
           }
 
           ## SBT environment
@@ -271,16 +277,12 @@ module Capistrano
 
           def _install_launch_jar(jar, sbt, options={})
             via = options.delete(:via)
-            script = (<<-EOS).gsub(/^\s*/, "") # TODO: this should be configurable
-              #!/bin/sh -e
-              java -Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=384M -jar `dirname $0`/sbt-launch.jar "$@"
-            EOS
             if via == :run_locally
               run_locally("mkdir -p #{File.dirname(sbt).dump}")
-              File.write(sbt, script)
+              File.write(sbt, sbt_launch_jar_script)
               run_locally("( test -x #{sbt.dump} || chmod 755 #{sbt.dump} )")
             else
-              safe_put(script, sbt, {:mode => "755", :run_method => via}.merge(options))
+              safe_put(sbt_launch_jar_script, sbt, {:mode => "755", :run_method => via}.merge(options))
             end
           end
 
