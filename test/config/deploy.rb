@@ -321,9 +321,9 @@ namespace(:test_with_release_build) {
     uninstall_sbt!
     set(:sbt_version, "0.12.2")
     set(:sbt_use_extras, true)
-    set(:sbt_setup_remotely, false)
+    set(:sbt_setup_remotely, true)
     set(:sbt_setup_locally, true)
-    set(:sbt_update_remotely, false)
+    set(:sbt_update_remotely, true)
     set(:sbt_update_locally, true)
     set(:sbt_template_path, File.join(File.dirname(__FILE__), "templates"))
     set(:sbt_settings, %w(global.sbt))
@@ -341,7 +341,7 @@ namespace(:test_with_release_build) {
     reset_sbt!
     begin
       File.write(File.join(sbt_project_path_local, "version.sbt"), %q{version := "0.0.1"})
-      find_and_execute_task("sbt:execute_locally")
+      find_and_execute_task("deploy")
     ensure
       run_locally("rm -f #{File.join(sbt_project_path_local, "version.sbt").dump}")
     end
@@ -350,7 +350,7 @@ namespace(:test_with_release_build) {
   task(:test_build_snapshot) {
     reset_sbt!
     begin
-      find_and_execute_task("sbt:execute_locally")
+      find_and_execute_task("deploy")
     rescue SystemExit
       aborted = true
     ensure
