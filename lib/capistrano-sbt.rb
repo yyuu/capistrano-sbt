@@ -2,6 +2,7 @@ require "capistrano-sbt/version"
 require "capistrano"
 require "capistrano/configuration/actions/file_transfer_ext"
 require "capistrano/configuration/resources/file_resources"
+require "tempfile"
 require "uri"
 
 module Capistrano
@@ -43,9 +44,44 @@ module Capistrano
           _cset(:sbt_extras_url, "https://raw.github.com/paulp/sbt-extras/master/sbt")
           _cset(:sbt_extras_file) { File.join(sbt_tools_path, "sbt") }
           _cset(:sbt_extras_file_local) { File.join(sbt_tools_path_local, "sbt") }
+          _cset(:sbt_extras_update_interval) {
+            if exists?(:sbt_extras_check_interval)
+              logger.info(":sbt_extras_check_interval has been deprecated. use :sbt_extras_update_interval instead.")
+              fetch(:sbt_extras_check_interval)
+            else
+              86400
+            end
+          }
+          _cset(:sbt_extras_update_timestamp) { (Time.now - sbt_extras_update_interval).strftime("%Y%m%d%H%M") }
 
           ## sbt-launch.jar
-          _cset(:sbt_version, "0.12.2")
+          _cset(:sbt_project_sbt_version) {
+            begin
+              tempfile = Tempfile.new("capistrano-sbt")
+              download(File.join(sbt_project_path, "project", "build.properties"), tempfile.path)
+              tempfile.rewind()
+              tempfile.read().scan(/^sbt\.version=(.*)$/).map { |x| x.last }.last
+            rescue
+              nil
+            ensure
+              tempfile.close()
+            end
+          }
+          _cset(:sbt_project_sbt_version_local) {
+            begin
+              properties = File.read(File.join(sbt_project_path_local, "project", "build.properties"))
+              properties.scan(/^sbt\.version=(.*)$/).map { |x| x.last }.last
+            rescue
+              nil
+            end
+          }
+          _cset(:sbt_version) {
+            version ||= sbt_project_sbt_version if sbt_update_remotely
+            version ||= sbt_project_sbt_version_local if sbt_update_locally
+            version ||= "0.12.2"
+            logger.debug("Detected sbt version #{version}")
+            version
+          }
           _cset(:sbt_group_id) {
             case sbt_version
             when /^0\.(?:7|10)\.\d+$/, /^0\.11\.[0-2]$/
@@ -77,6 +113,12 @@ module Capistrano
             else
               File.join(sbt_path_local, "sbt-launch.jar")
             end
+          }
+          _cset(:sbt_launch_jar_script) {
+            (<<-EOS).gsub(/^\s*/, "")
+              #!/bin/sh -e
+              java -Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=384M -jar `dirname $0`/sbt-launch.jar "$@"
+            EOS
           }
 
           ## SBT environment
@@ -128,9 +170,9 @@ module Capistrano
             options = sbt_common_options.dup
             if sbt_update_settings
               if sbt_use_extras
-                options << "-sbt-dir #{sbt_settings_path.dump}"
+                options += ["-sbt-dir", sbt_settings_path]
               else
-                options << "-Dsbt.global.base=#{sbt_settings_path.dump}"
+                options << "-Dsbt.global.base=#{sbt_settings_path}"
               end
             end
             options
@@ -139,9 +181,9 @@ module Capistrano
             options = sbt_common_options.dup
             if sbt_update_settings_locally
               if sbt_use_extras
-                options << "-sbt-dir #{sbt_settings_path_local.dump}"
+                options += ["-sbt-dir", sbt_settings_path_local]
               else
-                options << "-Dsbt.global.base=#{sbt_settings_path_local.dump}"
+                options << "-Dsbt.global.base=#{sbt_settings_path_local}"
               end
             end
             options
@@ -202,17 +244,13 @@ module Capistrano
             execute = []
             execute << "mkdir -p #{File.dirname(filename).dump}"
             if fetch(:sbt_update_extras, true)
-              t = (Time.now - fetch(:sbt_extras_check_interval, 86400).to_i).strftime("%Y%m%d%H%M")
-              x = "/tmp/sbt-extras.#{$$}"
-              execute << "touch -t #{t.dump} #{x.dump}"
-              execute << "( test #{filename.dump} -nt #{x.dump} || wget --no-verbose -O #{filename.dump} #{uri.dump} )"
-              execute << "touch #{filename.dump}"
-              execute << "rm -f #{x.dump}"
-              execute << "( test -x #{filename.dump} || chmod 755 #{filename.dump} )"
+              execute << %{t=$(mktemp /tmp/sbt.XXXXXXXXXX)}
+              execute << %{touch -t #{sbt_extras_update_timestamp.dump} "$t"}
+              execute << %{( test #{filename.dump} -nt "$t" || wget --no-verbose -O #{filename.dump} #{uri.dump}; rm -f "$t" )}
             else
-              execute << "( test -f #{filename.dump} || wget --no-verbose -O #{filename.dump} #{uri.dump} )"
-              execute << "( test -x #{filename.dump} || chmod 755 #{filename.dump} )"
+              execute << %{( test -f #{filename.dump} || wget --no-verbose -O #{filename.dump} #{uri.dump} )}
             end
+            execute << %{( test -x #{filename.dump} || chmod 755 #{filename.dump} )}
             _invoke_command(execute.join(" && "), options)
           end
 
@@ -239,16 +277,12 @@ module Capistrano
 
           def _install_launch_jar(jar, sbt, options={})
             via = options.delete(:via)
-            script = (<<-EOS).gsub(/^\s*/, "") # TODO: this should be configurable
-              #!/bin/sh -e
-              java -Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=384M -jar `dirname $0`/sbt-launch.jar "$@"
-            EOS
             if via == :run_locally
               run_locally("mkdir -p #{File.dirname(sbt).dump}")
-              File.write(sbt, script)
+              File.write(sbt, sbt_launch_jar_script)
               run_locally("( test -x #{sbt.dump} || chmod 755 #{sbt.dump} )")
             else
-              safe_put(script, sbt, {:mode => "755", :run_method => via}.merge(options))
+              safe_put(sbt_launch_jar_script, sbt, {:mode => "755", :run_method => via}.merge(options))
             end
           end
 
