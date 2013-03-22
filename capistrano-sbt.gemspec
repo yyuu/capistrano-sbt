@@ -13,7 +13,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "capistrano-sbt"
   gem.require_paths = ["lib"]
-  gem.version       = Capistrano::Sbt::VERSION
+  gem.version       = Capistrano::SBT::VERSION
 
   gem.add_dependency("capistrano")
   gem.add_dependency("capistrano-file-resources", "~> 0.1.0")
