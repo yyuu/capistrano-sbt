@@ -26,29 +26,29 @@ This recipes will try to do following things during Capistrano `deploy:setup` an
 
 To build you sbt projects during Capistrano `deploy` tasks, add following in you `config/deploy.rb`. By default, sbt build will run after the Capistrano's `deploy:finalize_update`.
 
-    # in "config/deploy.rb"
-    require 'capistrano-sbt'
-    set(:sbt_version, '0.11.2') # sbt version to build project
+    # config/deploy.rb
+    require "capistrano-sbt"
 
 Following options are available to manage your sbt build.
 
- * `:sbt_use_extras` - Use [sbt-extras](https://github.com/paulp/sbt-extras) to manage sbt. `false` by default.
- * `:sbt_version` - Project sbt version. This value may be discarded if `sbt_use_extras` is turned `true`.
- * `:sbt_archive_url` - Download URL for specified sbt version. This value may be discarded if `sbt_use_extras` is turned `true`.
- * `:sbt_compile_locally` - compile project on localhost. false by default.
- * `:sbt_goals` - sbt commands and tasks to execute. default is "reload clean package".
- * `:sbt_update_settings` - update `*.sbt` or not. false by default.
- * `:sbt_update_settings_locally` - udate `*.sbt` or not on local compilation. false by default.
- * `:sbt_settings` - list of your optional `*.sbt` files
- * `:sbt_settings_local` - list of your optional `*.sbt` files in on local compilation.
- * `:sbt_settings_path` - the destination path of the optional `*.sbt` files.
- * `:sbt_settings_path_local` - the destination path of the optional `*.sbt` files.
- * `:sbt_template_path` - specify ERB template path for `*.sbt`.
- * `:sbt_java_home` - optional `JAVA_HOME` settings for sbt commands.
- * `:sbt_java_home_local` - optional `JAVA_HOME` settings for sbt commands in localhost.
- * `:sbt_extras_url` - Download URL of `sbt` script of sbt-extras.
- * `:sbt_extras_check_interval` - Check updates of sbt-extras every specified seconds. `86400` by default.
- * `:sbt_log_noformat` - Do not colorize sbt outputs. `true` by default.
+ * `:sbt_use_extras` - Use [sbt-extras](https://github.com/paulp/sbt-extras) to manage sbt. `true` by default.
+ * `:sbt_extras_url` - The download url of sbt-extras.
+ * `:sbt_version` - If `:sbt_use_extras` was set as `false`, download specified version of `sbt-launch.jar` and set it up as `sbt`. If no version was given, try loading version from `project/build.properties`.
+ * `:sbt_setup_remotely` - Setup `sbt` on remote servers. As same value as `:sbt_update_remotely` by default.
+ * `:sbt_setup_locally` - Setup `sbt` on local server. Asa same value as `:sbt_update_locally` by default.
+ * `:sbt_update_remotely` - Run `sbt` on remote servers. `true` by default.
+ * `:sbt_update_locally` - Run `sbt` on local server. `false` by default.
+ * `:sbt_goals` - The `sbt` commands and tasks to be be executed. Run `reload clean package` by default.
+ * `:sbt_project_path` - The project path to be built on remote servers.
+ * `:sbt_project_path_local` - The project path to be built on local server.
+ * `:sbt_settings` - List of optional `*.sbt` files for remote servers.
+ * `:sbt_settings_local` - List of optional `*.sbt` files for local server.
+ * `:sbt_template_path` - The local path where the templates of `*.sbt` are in. By default, searches from `config/templates`.
+ * `:sbt_settings_path` - The destination path of the optional `*.sbt` files.
+ * `:sbt_settings_path_local` - The destination path of the optional `*.sbt` files.
+ * `:sbt_java_home` - Optional `JAVA_HOME` settings for `sbt` on remote servers.
+ * `:sbt_java_home_local` - Optional `JAVA_HOME` settings for `sbt` on local server.
+ * `:sbt_log_noformat` - Do not colorize `sbt` outputs. `true` by default.
  * `:sbt_release_build` - Skip building on SNAPSHOT version. `false` by default.
 
 ## Contributing

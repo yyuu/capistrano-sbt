@@ -1,5 +1,5 @@
 module Capistrano
-  module Sbt
-    VERSION = "0.0.8git"
+  module SBT
+    VERSION = "0.1.0"
   end
 end
