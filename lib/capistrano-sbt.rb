@@ -44,6 +44,15 @@ module Capistrano
           _cset(:sbt_extras_url, "https://raw.github.com/paulp/sbt-extras/master/sbt")
           _cset(:sbt_extras_file) { File.join(sbt_tools_path, "sbt") }
           _cset(:sbt_extras_file_local) { File.join(sbt_tools_path_local, "sbt") }
+          _cset(:sbt_extras_update_interval) {
+            if exists?(:sbt_extras_check_interval)
+              logger.info(":sbt_extras_check_interval has been deprecated. use :sbt_extras_update_interval instead.")
+              fetch(:sbt_extras_check_interval)
+            else
+              86400
+            end
+          }
+          _cset(:sbt_extras_update_timestamp) { (Time.now - sbt_extras_update_interval).strftime("%Y%m%d%H%M") }
 
           ## sbt-launch.jar
           _cset(:sbt_project_sbt_version) {
@@ -229,17 +238,13 @@ module Capistrano
             execute = []
             execute << "mkdir -p #{File.dirname(filename).dump}"
             if fetch(:sbt_update_extras, true)
-              t = (Time.now - fetch(:sbt_extras_check_interval, 86400).to_i).strftime("%Y%m%d%H%M")
-              x = "/tmp/sbt-extras.#{$$}"
-              execute << "touch -t #{t.dump} #{x.dump}"
-              execute << "( test #{filename.dump} -nt #{x.dump} || wget --no-verbose -O #{filename.dump} #{uri.dump} )"
-              execute << "touch #{filename.dump}"
-              execute << "rm -f #{x.dump}"
-              execute << "( test -x #{filename.dump} || chmod 755 #{filename.dump} )"
+              execute << %{t=$(mktemp /tmp/sbt.XXXXXXXXXX)}
+              execute << %{touch -t #{sbt_extras_update_timestamp.dump} "$t"}
+              execute << %{( test #{filename.dump} -nt "$t" || wget --no-verbose -O #{filename.dump} #{uri.dump}; rm -f "$t" )}
             else
-              execute << "( test -f #{filename.dump} || wget --no-verbose -O #{filename.dump} #{uri.dump} )"
-              execute << "( test -x #{filename.dump} || chmod 755 #{filename.dump} )"
+              execute << %{( test -f #{filename.dump} || wget --no-verbose -O #{filename.dump} #{uri.dump} )}
             end
+            execute << %{( test -x #{filename.dump} || chmod 755 #{filename.dump} )}
             _invoke_command(execute.join(" && "), options)
           end
 
