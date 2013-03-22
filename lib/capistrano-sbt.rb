@@ -139,7 +139,7 @@ module Capistrano
             options = sbt_common_options.dup
             if sbt_update_settings_locally
               if sbt_use_extras
-                options << "-sbt-dir #{sbt_settings_path_local.dump}"
+                options += ["-sbt-dir", sbt_settings_path_local]
               else
                 options << "-Dsbt.global.base=#{sbt_settings_path_local.dump}"
               end
