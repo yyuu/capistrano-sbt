@@ -98,6 +98,28 @@ def uninstall_sbt!
   reset_sbt!
 end
 
+def _test_sbt_exec_fails(args=[], options={})
+  failed = false
+  begin
+    sbt.exec(args, options)
+  rescue
+    failed = true
+  ensure
+    abort unless failed
+  end
+end
+
+def _test_sbt_exec_locally_fails(args=[], options={})
+    failed = false
+    begin
+      sbt.exec_locally(args, options)
+    rescue
+      failed = true
+    ensure
+      abort unless failed
+    end
+end
+
 task(:test_all) {
   find_and_execute_task("test_default")
   find_and_execute_task("test_with_remote")
@@ -163,8 +185,16 @@ namespace(:test_default) {
     sbt.exec("--version")
   }
 
+  task(:test_sbt_exec_fails) {
+    _test_sbt_exec_fails("MUST-FAIL")
+  }
+
   task(:test_sbt_exec_locally) {
     sbt.exec_locally("--version")
+  }
+
+  task(:test_sbt_exec_locally_fails) {
+    _test_sbt_exec_locally_fails("MUST-FAIL")
   }
 
   task(:test_sbt_artifact) {
@@ -229,8 +259,16 @@ namespace(:test_with_remote) {
     sbt.exec("--version")
   }
 
+  task(:test_sbt_exec_fails) {
+    _test_sbt_exec_fails("MUST-FAIL")
+  }
+
 # task(:test_sbt_exec_locally) {
 #   sbt.exec_locally("--version")
+# }
+
+# task(:test_sbt_exec_locally_fails) {
+#   _test_sbt_exec_locally_fails("MUST-FAIL")
 # }
 
   task(:test_sbt_artifact) {
@@ -295,8 +333,16 @@ namespace(:test_with_local) {
 #   sbt.exec("--version")
 # }
 
+# task(:test_sbt_exec_fails) {
+#   _test_sbt_exec_fails("MUST-FAIL")
+# }
+
   task(:test_sbt_exec_locally) {
     sbt.exec_locally("--version")
+  }
+
+  task(:test_sbt_exec_locally_fails) {
+    _test_sbt_exec_locally_fails("MUST-FAIL")
   }
 
   task(:test_sbt_artifact) {
@@ -413,8 +459,16 @@ namespace(:test_with_launch_jar) {
     sbt.exec("--version")
   }
 
+  task(:test_sbt_exec_fails) {
+    _test_sbt_exec_fails("MUST-FAIL")
+  }
+
   task(:test_sbt_exec_locally) {
     sbt.exec_locally("--version")
+  }
+
+  task(:test_sbt_exec_locally_fails) {
+    _test_sbt_exec_locally_fails("MUST-FAIL")
   }
 
   task(:test_sbt_artifact) {

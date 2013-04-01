@@ -125,14 +125,18 @@ module Capistrano
           _cset(:sbt_common_environment, {})
           _cset(:sbt_default_environment) {
             environment = {}
-            environment["JAVA_HOME"] = fetch(:sbt_java_home) if exists?(:sbt_java_home)
-            environment["PATH"] = [ sbt_bin_path, "$PATH" ].join(":") if sbt_setup_remotely
+            if sbt_setup_remotely
+              environment["JAVA_HOME"] = fetch(:sbt_java_home) if exists?(:sbt_java_home)
+              environment["PATH"] = [ sbt_bin_path, "$PATH" ].join(":")
+            end
             _merge_environment(sbt_common_environment, environment)
           }
           _cset(:sbt_default_environment_local) {
             environment = {}
-            environment["JAVA_HOME"] = fetch(:sbt_java_home_local) if exists?(:sbt_java_home_local)
-            environment["PATH"] = [ sbt_bin_path, "$PATH" ].join(":") if sbt_setup_locally
+            if sbt_setup_locally
+              environment["JAVA_HOME"] = fetch(:sbt_java_home_local) if exists?(:sbt_java_home_local)
+              environment["PATH"] = [ sbt_bin_path, "$PATH" ].join(":")
+            end
             _merge_environment(sbt_common_environment, environment)
           }
           _cset(:sbt_environment) { _merge_environment(sbt_default_environment, fetch(:sbt_extra_environment, {})) }
@@ -471,7 +475,7 @@ module Capistrano
                 system(cmdline)
               end
               if $?.to_i > 0 # $? is command exit code (posix style)
-                raise Capistrano::LocalArgumentError, "Command #{cmd} returned status code #{$?}"
+                raise Capistrano::LocalArgumentError, "Command #{cmdline} returned status code #{$?}"
               end
               logger.trace "command finished in #{(elapsed * 1000).round}ms"
             end
