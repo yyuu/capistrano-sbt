@@ -206,7 +206,7 @@ module Capistrano
           if top.namespaces.key?(:multistage)
             after "multistage:ensure", "sbt:setup_default_environment"
           else
-            on :start do
+            on :load do
               if top.namespaces.key?(:multistage)
                 after "multistage:ensure", "sbt:setup_default_environment"
               else
@@ -370,7 +370,7 @@ module Capistrano
           }
           _cset(:sbt_update_hook_type, :after)
           _cset(:sbt_update_hook, "deploy:finalize_update")
-          on(:start) do
+          on(:load) do
             [ sbt_update_hook ].flatten.each do |hook|
               send(sbt_update_hook_type, hook, "sbt:update") if hook
             end
