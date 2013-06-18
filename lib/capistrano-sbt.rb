@@ -135,7 +135,7 @@ module Capistrano
             environment = {}
             if sbt_setup_locally
               environment["JAVA_HOME"] = fetch(:sbt_java_home_local) if exists?(:sbt_java_home_local)
-              environment["PATH"] = [ sbt_bin_path, "$PATH" ].join(":")
+              environment["PATH"] = [ sbt_bin_path_local, "$PATH" ].join(":")
             end
             _merge_environment(sbt_common_environment, environment)
           }
